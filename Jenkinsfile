@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/ton-utilisateur/ton-repository.git'
+                git 'https://github.com/HOUDA1807/gestion_absences'
             }
         }
 
