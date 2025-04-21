@@ -12,34 +12,44 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git credentialsId: '1', url: 'git@github.com:HOUDA1807/gestion_absences.git'
-                // Remplacez 'git@github.com:HOUDA1807/gestion_absences.git' si vous utilisez SSH
-                // Utilisez 'https://github.com/HOUDA1807/gestion_absences.git' si vous utilisez un token
+                git credentialsId: '2', url: 'git@github.com:HOUDA1807/gestion_absences.git'
+                // Utilise l'URL SSH (git@github.com:...) et Remplacez '1' par l'ID de vos identifiants GitHub
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "🔧 Installation des dépendances avec npm..."
+                // Installer Node.js et npm si non présents
+                sh '''
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                    apt-get install -y nodejs
+                '''
+                // Maintenant installer les dépendances
+                sh 'npm install'
             }
         }
 
         stage('Build') {
             steps {
-                echo "Début de la phase de construction..."
-                // Adaptez ces commandes en fonction de votre projet (par exemple, Maven, Gradle, npm...)
-                sh 'echo "Aucune étape de construction spécifique requise pour ce projet."'
+                echo "🛠️ Construction du projet..."
+                sh 'npm run build' // Adapté à ton projet
             }
         }
 
         stage('Test') {
             steps {
-                echo "Début de la phase de test..."
-                // Adaptez ces commandes en fonction de votre projet (par exemple, JUnit, Jest...)
-                sh 'echo "Aucune étape de test spécifique requise pour ce projet."'
+                echo "🧪 Exécution des tests..."
+                // Ajouter ici des tests si nécessaires
+                sh 'npm run test' // Adapté à ton projet
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Début de la phase de déploiement..."
-                // Adaptez ces commandes en fonction de votre environnement de déploiement
-                // Par exemple : docker login, docker push, kubectl apply...
-                sh 'echo "Aucune étape de déploiement spécifique définie. Vérifiez la configuration Docker."'
+                echo "🚀 Déploiement..."
+                // Ajouter des étapes de déploiement, par exemple, avec Docker
+                sh 'npm run deploy' // Adapté à ton projet
             }
         }
     }
