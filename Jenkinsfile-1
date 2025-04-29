@@ -1,5 +1,5 @@
 pipeline {
-  agent {label 'any'}
+  agent any  // Utilisation de n'importe quel agent disponible
 
   stages {
     stage('Hello') {
