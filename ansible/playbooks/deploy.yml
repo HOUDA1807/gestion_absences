@@ -1,0 +1,8 @@
+---
+- name: Déployer l'application
+  hosts: production
+  become: true  # Si tu as besoin de privilèges sudo
+  roles:
+    - common
+    - docker
+    - app

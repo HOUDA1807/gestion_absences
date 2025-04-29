@@ -1,65 +1,47 @@
 pipeline {
     agent any
 
-    triggers {
-        githubPush()
-    }
-
-    options {
-        timestamps()
+    environment {
+        DOCKER_IMAGE = 'gestion_absences_app'
+        ANSIBLE_INVENTORY = 'ansible/hosts'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git credentialsId: '2', url: 'git@github.com:HOUDA1807/gestion_absences.git'
-                // Utilise l'URL SSH (git@github.com:...) et Remplacez '1' par l'ID de vos identifiants GitHub
+                checkout scm  // Récupère le code du dépôt GitHub
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
-                echo "🔧 Installation des dépendances avec npm..."
-                // Installer Node.js et npm si non présents
-                sh '''
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-                    apt-get install -y nodejs
-                '''
-                // Maintenant installer les dépendances
-                sh 'npm install'
+                script {
+                    sh 'docker build -t $DOCKER_IMAGE .'  // Construire l'image Docker de l'application
+                }
             }
         }
 
-        stage('Build') {
+        stage('Run Tests') {
             steps {
-                echo "🛠️ Construction du projet..."
-                sh 'npm run build' // Adapté à ton projet
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "🧪 Exécution des tests..."
-                // Ajouter ici des tests si nécessaires
-                sh 'npm run test' // Adapté à ton projet
+                script {
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                    sh 'docker-compose exec app pytest tests/'  // Lancer les tests dans le conteneur Docker
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "🚀 Déploiement..."
-                // Ajouter des étapes de déploiement, par exemple, avec Docker
-                sh 'npm run deploy' // Adapté à ton projet
+                script {
+                    sh 'ansible-playbook ansible/playbooks/deploy.yml'  // Déployer avec Ansible
+                }
             }
         }
     }
 
     post {
-        success {
-            echo 'La pipeline a été exécutée avec succès !'
-        }
-        failure {
-            echo 'La pipeline a échoué !'
+        always {
+            cleanWs()  // Nettoyer l'espace de travail après l'exécution
         }
     }
 }

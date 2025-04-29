@@ -1,0 +1,21 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8086:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    networks:
+      - gestion_absences_network
+    
+  # Ajoutez ici d'autres services si nécessaire
+
+networks:
+  gestion_absences_network:
+    driver: bridge
+
+volumes:
+  jenkins_home:
