@@ -5,4 +5,3 @@
   roles:
     - common
     - geerlingguy.docker
-    - app
