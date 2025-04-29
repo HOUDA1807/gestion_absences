@@ -9,39 +9,33 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm  // Récupère le code du dépôt GitHub
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'  // Construire l'image Docker de l'application
-                }
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
         stage('Run Tests') {
             steps {
-                script {
-                    sh 'docker-compose -f docker-compose.yml up -d'
-                    sh 'docker-compose exec app pytest tests/'  // Lancer les tests dans le conteneur Docker
-                }
+                sh 'docker-compose up -d'
+                sh 'docker-compose exec app pytest tests/'
             }
         }
 
         stage('Deploy') {
             steps {
-                script {
-                    sh 'ansible-playbook ansible/playbooks/deploy.yml'  // Déployer avec Ansible
-                }
+                sh 'ansible-playbook -i $ANSIBLE_INVENTORY ansible/playbooks/deploy.yml'
             }
         }
     }
 
     post {
         always {
-            cleanWs()  // Nettoyer l'espace de travail après l'exécution
+            cleanWs()
         }
     }
 }
