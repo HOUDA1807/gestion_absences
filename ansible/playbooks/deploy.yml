@@ -4,5 +4,5 @@
   become: true  # Si tu as besoin de privilèges sudo
   roles:
     - common
-    - docker
+    - geerlingguy.docker
     - app
