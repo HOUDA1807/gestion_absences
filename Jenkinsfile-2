@@ -2,23 +2,39 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_HOST_KEY_CHECKING = "false"  // Désactive la vérification de l'empreinte de la clé SSH
+        // Définir les variables d'environnement nécessaires pour Ansible
+        ANSIBLE_CONFIG = './ansible/ansible.cfg'  // Si tu as un fichier de configuration spécifique à Ansible
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                // Récupère les fichiers du dépôt Git
-                checkout scm
+                script {
+                    // Récupère le code depuis le dépôt GitHub
+                    echo 'Cloning the repository from GitHub...'
+                    git credentialsId: 'jenkins-github-sec-key', url: 'https://github.com/HOUDA1807/gestion_absences.git'
+                }
             }
         }
 
-        stage('Hello') {
+        stage('Set Up Environment') {
             steps {
                 script {
-                    // Affiche les versions des outils Ansible pour vérifier qu'ils sont bien installés
-                    sh 'ansible --version'
-                    sh 'ansible-playbook --version'
+                    // Vérifie si Ansible est installé sur l'agent Jenkins
+                    echo 'Verifying Ansible installation...'
+                    sh 'ansible --version'  // Vérifie si Ansible est installé
+                    sh 'ansible-playbook --version'  // Vérifie la version du playbook
+                    sh 'ansible-galaxy --version'  // Vérifie la version d'Ansible Galaxy si nécessaire
+                }
+            }
+        }
+
+        stage('Verify Files') {
+            steps {
+                script {
+                    // Vérifie que le fichier playbook.yml existe dans le répertoire ansible/
+                    echo 'Verifying the playbook.yml file existence...'
+                    sh 'ls -la ansible/'
                 }
             }
         }
@@ -26,19 +42,40 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 script {
-                    // Exécute le playbook Ansible
-                    // Remplace "inventory.ini" par ton fichier d'inventaire
-                    // Remplace "playbook.yml" par le nom de ton playbook
-                    sh 'ansible-playbook -i inventory.ini playbook.yml'
+                    // Exécute le playbook Ansible avec l'inventaire
+                    echo 'Running Ansible Playbook...'
+                    try {
+                        sh 'ansible-playbook -i ansible/inventory.ini ansible/playbook.yml'
+                    } catch (Exception e) {
+                        // En cas d'erreur lors de l'exécution, cela arrête le pipeline et le signale
+                        error "Ansible playbook execution failed: ${e.message}"
+                    }
+                }
+            }
+        }
+
+        stage('Post-execution') {
+            steps {
+                script {
+                    // Cette étape peut inclure un rapport ou des actions post-exécution
+                    echo 'Playbook executed successfully.'
                 }
             }
         }
     }
 
     post {
+        success {
+            // Action après un succès, comme une notification ou un autre traitement
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            // Action après un échec, comme une notification ou un autre traitement
+            echo 'Pipeline failed. Please check the logs for errors.'
+        }
         always {
-            // Actions après la fin du build (optionnel)
-            echo 'Pipeline finished!'
+            // Action qui se fait toujours, comme nettoyer ou archiver les résultats
+            echo 'Cleaning up or archiving logs...'
         }
     }
 }
