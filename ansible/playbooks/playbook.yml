@@ -1,19 +1,9 @@
 ---
-- name: Installer et démarrer Nginx
+- name: Install Apache on target servers
   hosts: all
-  become: yes
+  become: yes  # Utiliser sudo
   tasks:
-    - name: Mettre à jour les paquets
+    - name: Install Apache2 package
       apt:
-        update_cache: yes
-
-    - name: Installer nginx
-      apt:
-        name: nginx
+        name: apache2
         state: present
-
-    - name: S'assurer que nginx est en marche
-      service:
-        name: nginx
-        state: started
-        enabled: yes
