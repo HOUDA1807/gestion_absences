@@ -2,41 +2,29 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_HOST_KEY_CHECKING = "false"  // Désactive la vérification de l'empreinte de la clé SSH (optionnel)
+        ANSIBLE_CONFIG = "${WORKSPACE}/ansible/ansible.cfg"
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Vérification du code') {
             steps {
-                // Récupère les fichiers du dépôt Git
-                checkout scm
+                git branch: 'master', url: 'git@github.com:HOUDA1807/gestion_absences.git', credentialsId: 'jenkins-github-sec-key'
             }
         }
 
-        stage('Hello') {
+        stage('Exécution du playbook Ansible') {
             steps {
-                script {
-                    // Affiche les versions des outils Ansible pour s'assurer qu'ils sont bien installés
-                    sh 'ansible --version'
-                    sh 'ansible-playbook --version'
-                }
-            }
-        }
-
-        stage('Run Ansible Playbook') {
-            steps {
-                script {
-                    // Exécute le playbook Ansible
-                    sh 'ansible-playbook -i inventory.ini playbook.yml'
-                }
+                sh 'ansible-playbook ansible/playbooks/playbook.yml -i ansible/inventory.ini'
             }
         }
     }
 
     post {
-        always {
-            // Actions après la fin du build (optionnel)
-            echo 'Pipeline finished!'
+        failure {
+            echo '❌ Échec de l’exécution du playbook.'
+        }
+        success {
+            echo '✅ Playbook exécuté avec succès.'
         }
     }
 }
