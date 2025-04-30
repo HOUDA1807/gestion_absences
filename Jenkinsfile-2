@@ -2,17 +2,17 @@ pipeline {
     agent any
 
     environment {
-        // Définir les variables d'environnement nécessaires pour Ansible
-        ANSIBLE_CONFIG = './ansible/ansible.cfg'  // Si tu as un fichier de configuration spécifique à Ansible
+        // Si des variables d'environnement doivent être définies, elles peuvent l'être ici
+        ANSIBLE_CONFIG = 'ansible/ansible.cfg'  // Configurer le fichier Ansible
     }
 
     stages {
         stage('Checkout') {
             steps {
                 script {
-                    // Récupère le code depuis le dépôt GitHub
                     echo 'Cloning the repository from GitHub...'
-                    git credentialsId: 'jenkins-github-sec-key', url: 'https://github.com/HOUDA1807/gestion_absences.git'
+                    // Clonage du repository à partir de GitHub
+                    checkout scm
                 }
             }
         }
@@ -20,11 +20,11 @@ pipeline {
         stage('Set Up Environment') {
             steps {
                 script {
-                    // Vérifie si Ansible est installé sur l'agent Jenkins
                     echo 'Verifying Ansible installation...'
-                    sh 'ansible --version'  // Vérifie si Ansible est installé
-                    sh 'ansible-playbook --version'  // Vérifie la version du playbook
-                    sh 'ansible-galaxy --version'  // Vérifie la version d'Ansible Galaxy si nécessaire
+                    // Vérification de la version d'Ansible
+                    sh 'ansible --version'
+                    sh 'ansible-playbook --version'
+                    sh 'ansible-galaxy --version'
                 }
             }
         }
@@ -32,9 +32,9 @@ pipeline {
         stage('Verify Files') {
             steps {
                 script {
-                    // Vérifie que le fichier playbook.yml existe dans le répertoire ansible/
                     echo 'Verifying the playbook.yml file existence...'
-                    sh 'ls -la ansible/'
+                    // Vérification que le playbook existe dans le répertoire attendu
+                    sh 'ls -la ansible/playbooks'
                 }
             }
         }
@@ -42,14 +42,9 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 script {
-                    // Exécute le playbook Ansible avec l'inventaire
                     echo 'Running Ansible Playbook...'
-                    try {
-                        sh 'ansible-playbook -i ansible/inventory.ini ansible/playbook.yml'
-                    } catch (Exception e) {
-                        // En cas d'erreur lors de l'exécution, cela arrête le pipeline et le signale
-                        error "Ansible playbook execution failed: ${e.message}"
-                    }
+                    // Exécution du playbook Ansible avec le fichier d'inventaire
+                    sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/playbook.yml'
                 }
             }
         }
@@ -57,25 +52,23 @@ pipeline {
         stage('Post-execution') {
             steps {
                 script {
-                    // Cette étape peut inclure un rapport ou des actions post-exécution
-                    echo 'Playbook executed successfully.'
+                    echo 'Cleaning up or archiving logs...'
+                    // Nettoyage ou archivage des logs si nécessaire
                 }
             }
         }
     }
 
     post {
+        always {
+            echo 'Pipeline finished. Cleaning up...'
+            // Actions post-exécution de la pipeline, comme supprimer des fichiers temporaires ou archiver des résultats
+        }
         success {
-            // Action après un succès, comme une notification ou un autre traitement
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline executed successfully.'
         }
         failure {
-            // Action après un échec, comme une notification ou un autre traitement
             echo 'Pipeline failed. Please check the logs for errors.'
-        }
-        always {
-            // Action qui se fait toujours, comme nettoyer ou archiver les résultats
-            echo 'Cleaning up or archiving logs...'
         }
     }
 }
