@@ -8,6 +8,6 @@ RUN apt-get update && \
         python3-pip \
         python3-apt \
         git && \
-    pip cache purge && \  # Ajout de la commande pour purger le cache pip
-    pip install --no-cache-dir ansible && \
+    pip3 cache purge && \  # Utilisation de pip3 pour Python 3
+    pip3 install --no-cache-dir ansible && \
     apt-get clean
