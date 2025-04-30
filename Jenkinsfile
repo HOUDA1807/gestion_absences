@@ -16,7 +16,9 @@ pipeline {
         stage('📥 Clonage du dépôt') {
             steps {
                 script {
-                    // On clone le dépôt Git
+                    // Supprimer le répertoire existant s'il existe
+                    sh 'rm -rf gestion_absences'
+                    // Puis cloner le dépôt
                     sh 'git clone git@github.com:HOUDA1807/gestion_absences.git'
                 }
             }
