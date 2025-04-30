@@ -16,10 +16,12 @@ pipeline {
         stage('📥 Clonage du dépôt') {
             steps {
                 script {
-                    // Supprimer le répertoire existant s'il existe
-                    sh 'rm -rf gestion_absences'
-                    // Puis cloner le dépôt
-                    sh 'git clone git@github.com:HOUDA1807/gestion_absences.git'
+                    // Vérifier si le répertoire existe avant de cloner
+                    if (!fileExists('gestion_absences')) {
+                        sh 'git clone git@github.com:HOUDA1807/gestion_absences.git'
+                    } else {
+                        echo "Le répertoire gestion_absences existe déjà. Aucun clonage nécessaire."
+                    }
                 }
             }
         }
