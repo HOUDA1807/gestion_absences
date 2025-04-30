@@ -1,13 +1,11 @@
-FROM ubuntu:20.04
+# Utilise une image de base contenant Python 3
+FROM python:3.11-slim
 
-# Mise à jour des paquets et installation de dépendances
+# Mise à jour des paquets, installation de dépendances, et installation d'Ansible
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         sshpass \
         curl \
-        python3-pip \
-        python3-apt \
         git && \
-    pip3 cache purge && \  # Utilisation de pip3 pour Python 3
     pip3 install --no-cache-dir ansible && \
     apt-get clean
