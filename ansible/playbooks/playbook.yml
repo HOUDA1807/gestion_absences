@@ -1,9 +1,12 @@
 ---
 - name: Install Apache on target servers
-  hosts: all
-  become: yes  # Utiliser sudo
+  hosts: localhost
+  become: yes
+  become_method: sudo
+
   tasks:
-    - name: Install Apache2 package
+    - name: Install Apache
       apt:
         name: apache2
         state: present
+        update_cache: yes
