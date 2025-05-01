@@ -12,7 +12,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Récupérer ton code depuis GitHub
-                git url: 'https://github.com/HOUDA1807/gestion_absences.git', branch: 'main'
+                git url: 'https://github.com/HOUDA1807/gestion_absences.git', branch: 'master'
+
             }
         }
 
