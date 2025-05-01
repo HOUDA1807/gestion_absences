@@ -2,37 +2,48 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_FORCE_COLOR = 'true'
-        TERM = 'xterm-256color'
+        DOCKER_IMAGE = "gestion_absences"
+        DOCKER_TAG = "latest"
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'master',
-                    url: 'git@github.com:HOUDA1807/gestion_absences.git',
-                    credentialsId: 'jenkins-github-sec-key'
+                git credentialsId: 'pipe', url: 'https://github.com/HOUDA1807/gestion_absences.git'
             }
         }
 
-        stage('Exécution du playbook Ansible - Déploiement') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh '''
-                        cd ansible
-                        ansible-playbook -i inventory.ini playbooks/deploy.yml
-                    '''
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
+            }
+        }
+
+        stage('Run with Docker Compose') {
+            steps {
+                sh 'docker-compose down || true'
+                sh 'docker-compose up -d'
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            when {
+                expression { fileExists('ansible/playbook.yml') }
+            }
+            steps {
+                sh 'ansible-playbook ansible/playbook.yml'
             }
         }
     }
 
     post {
-        failure {
-            echo "❌ Le pipeline a échoué."
-        }
         success {
-            echo "✅ Le pipeline s'est terminé avec succès."
+            echo '✅ Déploiement réussi.'
+        }
+        failure {
+            echo '❌ Échec du pipeline.'
         }
     }
 }
