@@ -2,21 +2,26 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_PLAYBOOK = "gestion_absences/ansible/playbooks/deploy.yml"
-        INVENTORY_FILE = "gestion_absences/ansible/inventory.ini"
+        ANSIBLE_FORCE_COLOR = 'true'
+        TERM = 'xterm-256color'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                checkout scm
+                git branch: 'master',
+                    url: 'git@github.com:HOUDA1807/gestion_absences.git',
+                    credentialsId: 'jenkins-github-sec-key'
             }
         }
 
         stage('Exécution du playbook Ansible - Déploiement') {
             steps {
                 script {
-                    sh "ansible-playbook -i ${INVENTORY_FILE} ${ANSIBLE_PLAYBOOK}"
+                    sh '''
+                        cd ansible
+                        ansible-playbook -i inventory.ini playbooks/deploy.yml
+                    '''
                 }
             }
         }
@@ -27,7 +32,7 @@ pipeline {
             echo "❌ Le pipeline a échoué."
         }
         success {
-            echo "✅ Déploiement effectué avec succès via Ansible !"
+            echo "✅ Le pipeline s'est terminé avec succès."
         }
     }
 }
