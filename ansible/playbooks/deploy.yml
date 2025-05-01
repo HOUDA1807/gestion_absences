@@ -1,14 +1,26 @@
 ---
-- name: Déploiement sur les serveurs de production
-  hosts: production
-  become: true
+- name: Déploiement gestion_absences
+  hosts: web
+  gather_facts: false
+
+  collections:
+    - community.docker
+
   tasks:
-    - name: Installer nginx
-      apt:
-        name: nginx
-        state: present
-    - name: Démarrer nginx
-      service:
-        name: nginx
+    - name: Démarrer (ou redémarrer) le conteneur
+      community.docker.docker_container:
+        name: gestion_absences
+        image: gestion_absences_image:latest
         state: started
-        enabled: true
+        restart_policy: always
+        ports:
+          - "8080:8080"
+
+    - name: Afficher l’état du conteneur
+      community.docker.docker_container_info:
+        name: gestion_absences
+      register: info
+
+    - name: Debug – afficher l’ID du conteneur
+      debug:
+        msg: "ID conteneur = {{ info.container.Id }}"
