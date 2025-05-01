@@ -1,29 +1,61 @@
 pipeline {
     agent any
 
+    environment {
+        // Chemins absolus pour les fichiers et répertoires
+        ANSIBLE_CONFIG = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/ansible.cfg'
+        INVENTORY_FILE = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/inventory.ini'
+        PLAYBOOK_DIR = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/playbooks'
+    }
+
     stages {
-        stage('Checkout code') {
+        stage('Cloner le dépôt') {
             steps {
-                git credentialsId: 'jenkins-github-sec-key',
-                    url: 'git@github.com:HOUDA1807/gestion_absences.git'
+                // Cloner le dépôt GitHub dans le workspace Jenkins
+                git 'https://github.com/ton-utilisateur/ton-repository.git'
             }
         }
 
-        stage('Run Ansible Playbook') {
+        stage('Préparation') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-github-sec-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh "ansible-playbook -i ansible/inventory.ini --private-key=$SSH_KEY ansible/playbooks/deploy.yml"
-                }
+                // Vérification de la configuration Ansible
+                echo "Vérification de la configuration Ansible"
+                sh 'ansible --version'
+            }
+        }
+
+        stage('Exécution des playbooks Ansible') {
+            steps {
+                // Exécution du playbook avec les chemins absolus
+                echo "Exécution du playbook Ansible"
+                sh '''
+                ansible-playbook -i $INVENTORY_FILE $PLAYBOOK_DIR/ton_playbook.yml
+                '''
+            }
+        }
+
+        stage('Vérification de l\'infrastructure') {
+            steps {
+                // Vérification de la connexion avec les hôtes
+                echo "Vérification de la connexion aux hôtes"
+                sh '''
+                ansible -i $INVENTORY_FILE all -m ping
+                '''
             }
         }
     }
 
     post {
+        success {
+            echo 'Le pipeline a réussi !'
+        }
+
         failure {
             echo 'Le pipeline a échoué.'
         }
-        success {
-            echo 'Déploiement terminé avec succès.'
+
+        always {
+            echo 'Exécution du pipeline terminée.'
         }
     }
 }
