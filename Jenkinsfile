@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_PLAYBOOK = "/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/playbooks/deploy.yml"
-        INVENTORY_FILE = "/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/inventory.ini"
+        ANSIBLE_PLAYBOOK = "gestion_absences/ansible/playbooks/deploy.yml"
+        INVENTORY_FILE = "gestion_absences/ansible/inventory.ini"
     }
 
     stages {
