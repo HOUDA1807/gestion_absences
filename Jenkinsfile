@@ -2,15 +2,38 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('Checkout code') {
             steps {
-                git 'git@github.com:HOUDA1807/gestion_absences.git'
+                git credentialsId: 'jenkins-github-sec-key',
+                    url: 'git@github.com:HOUDA1807/gestion_absences.git'
             }
         }
-        stage('Deploy') {
+
+        stage('Check dependencies') {
             steps {
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
+                sh 'which ansible || { echo "Ansible is not installed"; exit 1; }'
+                sh 'which git || { echo "Git is not installed"; exit 1; }'
             }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-github-sec-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh 'ansible-playbook -i ansible/inventory.ini --private-key=$SSH_KEY ansible/playbooks/deploy.yml'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Nettoyage des ressources...'
+        }
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+        success {
+            echo 'Déploiement terminé avec succès.'
         }
     }
 }
