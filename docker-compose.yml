@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   web:
+    build: .
     image: gestion_absences_image:latest
-    build:
-      context: .
     ports:
       - "8080:8080"
     depends_on:
