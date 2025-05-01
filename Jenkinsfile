@@ -2,26 +2,15 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout code') {
+        stage('Checkout') {
             steps {
-                git credentialsId: 'jenkins-github-sec-key',
-                    url: 'git@github.com:HOUDA1807/gestion_absences.git'
+                git 'git@github.com:HOUDA1807/gestion_absences.git'
             }
         }
-
-        stage('Run Ansible Playbook') {
+        stage('Deploy') {
             steps {
-                sh 'ansible-playbook ansible/playbooks/deploy.yml'
+                sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
             }
-        }
-    }
-
-    post {
-        failure {
-            echo 'Le pipeline a échoué.'
-        }
-        success {
-            echo 'Déploiement terminé avec succès.'
         }
     }
 }
