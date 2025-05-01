@@ -1,41 +1,14 @@
 ---
 - name: Déploiement sur les serveurs de production
   hosts: production
-  become: yes
-  vars:
-    package_list:
-      - curl
-      - git
-      - nginx
-
+  become: true
   tasks:
-    - name: Mettre à jour la liste des paquets
+    - name: Installer nginx
       apt:
-        update_cache: yes
-
-    - name: Installer les paquets nécessaires
-      apt:
-        name: "{{ item }}"
+        name: nginx
         state: present
-      loop: "{{ package_list }}"
-    
-    - name: Démarrer le service nginx
+    - name: Démarrer nginx
       service:
         name: nginx
         state: started
-        enabled: yes
-
-    - name: Copier un fichier de configuration nginx
-      copy:
-        src: ./nginx.conf
-        dest: /etc/nginx/nginx.conf
-        mode: '0644'
-      notify:
-        - Reload nginx
-
-  handlers:
-    - name: Reload nginx
-      service:
-        name: nginx
-        state: reloaded
-
+        enabled: true
