@@ -1,28 +1,25 @@
 pipeline {
     agent any
-    tools {
-        // Spécifie l'installation de Maven configurée dans Jenkins
-        maven 'Maven 3'
-    }
+
     environment {
-        // Variables d'environnement que tu peux configurer
-        DOCKER_IMAGE = 'gestion_absences_image'
-        DOCKER_REGISTRY = 'your-docker-registry'
-        ANSIBLE_PLAYBOOK = 'deploy.yml'
+        // Pour être sûr que docker et docker compose sont trouvés
+        PATH = "/usr/bin:${env.PATH}"
+        IMAGE_NAME = 'gestion_absences_image'
     }
+
     stages {
-        stage('Declarative: Checkout SCM') {
+        stage('Test Docker') {
             steps {
-                // Checkout du code depuis le dépôt Git
-                checkout scm
+                script {
+                    sh 'docker --version'
+                }
             }
         }
 
-        stage('Build Java Project') {
+        stage('Test Docker Compose') {
             steps {
                 script {
-                    // Exécution de Maven pour compiler le projet
-                    sh 'mvn clean install'
+                    sh 'docker compose version'
                 }
             }
         }
@@ -30,17 +27,18 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Construction de l'image Docker
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Run with Docker Compose') {
             steps {
                 script {
-                    // Exécution du conteneur Docker
-                    sh 'docker run -d --name gestion_absences $DOCKER_IMAGE'
+                    // Arrêt/cleanup éventuel
+                    sh 'docker compose down || true'
+                    // Lancement des services
+                    sh 'docker compose up -d'
                 }
             }
         }
@@ -48,27 +46,8 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 script {
-                    // Déploiement avec Ansible
-                    sh "ansible-playbook -i inventory $ANSIBLE_PLAYBOOK"
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    // Exécution des tests (par exemple avec Maven ou un autre outil)
-                    sh 'mvn test'
-                }
-            }
-        }
-
-        stage('Push to Docker Registry') {
-            steps {
-                script {
-                    // Push de l'image Docker vers un registry
-                    sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DOCKER_IMAGE"
-                    sh "docker push $DOCKER_REGISTRY/$DOCKER_IMAGE"
+                    // Adapté à ton inventaire et playbook
+                    sh 'ansible-playbook -i ansible/inventory/production ansible/deploy.yml'
                 }
             }
         }
@@ -76,18 +55,17 @@ pipeline {
 
     post {
         always {
-            // Cleanup après chaque exécution du pipeline
-            echo 'Pipeline terminé'
-            // Ajoute ici des actions de nettoyage si nécessaire (par exemple suppression de conteneurs Docker)
-            sh 'docker rm -f gestion_absences'
+            script {
+                // Nettoyage final
+                sh 'docker rm -f gestion_absences || true'
+                sh 'docker compose down || true'
+            }
         }
         success {
-            // Actions à effectuer si le pipeline réussit
-            echo 'Pipeline réussi !'
+            echo '✅ Pipeline terminée avec succès !'
         }
         failure {
-            // Actions à effectuer si le pipeline échoue
-            echo 'Pipeline échoué !'
+            echo '❌ Échec du pipeline.'
         }
     }
 }
