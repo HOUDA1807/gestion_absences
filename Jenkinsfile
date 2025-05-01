@@ -2,60 +2,62 @@ pipeline {
     agent any
 
     environment {
-        // Chemins absolus pour les fichiers et répertoires
-        ANSIBLE_CONFIG = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/ansible.cfg'
+        // Chemins absolus pour ton environnement Jenkins
+        ANSIBLE_PLAYBOOKS_DIR = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/playbooks'
         INVENTORY_FILE = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/inventory.ini'
-        PLAYBOOK_DIR = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/playbooks'
+        ANSIBLE_CFG = '/var/jenkins_home/workspace/Jenkins-Ansible/gestion_absences/ansible/ansible.cfg'
     }
 
     stages {
-        stage('Cloner le dépôt') {
+        stage('Checkout SCM') {
             steps {
-                // Cloner le dépôt GitHub dans le workspace Jenkins
-                git 'https://github.com/ton-utilisateur/ton-repository.git'
+                script {
+                    // Cloner le dépôt Git
+                    checkout scm
+                }
             }
         }
 
-        stage('Préparation') {
+        stage('Install Ansible') {
             steps {
-                // Vérification de la configuration Ansible
-                echo "Vérification de la configuration Ansible"
-                sh 'ansible --version'
+                script {
+                    // Installer Ansible si nécessaire
+                    sh 'sudo apt-get update -y'
+                    sh 'sudo apt-get install ansible -y'
+                }
             }
         }
 
-        stage('Exécution des playbooks Ansible') {
+        stage('Exécution du playbook Ansible - Déploiement') {
             steps {
-                // Exécution du playbook avec les chemins absolus
-                echo "Exécution du playbook Ansible"
-                sh '''
-                ansible-playbook -i $INVENTORY_FILE $PLAYBOOK_DIR/ton_playbook.yml
-                '''
+                script {
+                    // Exécuter le playbook de déploiement sur les serveurs de production
+                    sh """
+                    ansible-playbook -i ${INVENTORY_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/deploy.yml
+                    """
+                }
             }
         }
 
         stage('Vérification de l\'infrastructure') {
             steps {
-                // Vérification de la connexion avec les hôtes
-                echo "Vérification de la connexion aux hôtes"
-                sh '''
-                ansible -i $INVENTORY_FILE all -m ping
-                '''
+                script {
+                    // Vérification d'une tâche simple avec Ansible
+                    sh """
+                    ansible -i ${INVENTORY_FILE} all -m ping
+                    """
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Le pipeline a réussi !'
+            echo 'Pipeline exécuté avec succès.'
         }
 
         failure {
             echo 'Le pipeline a échoué.'
-        }
-
-        always {
-            echo 'Exécution du pipeline terminée.'
         }
     }
 }
