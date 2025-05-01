@@ -1,10 +1,22 @@
-FROM jenkins/jenkins:lts
-
-# Installer Docker dans le conteneur
-USER root
-RUN apt-get update && apt-get install -y \
-    docker.io \
-    && apt-get clean
-
-# Revenir à l'utilisateur Jenkins
-USER jenkins
+pipeline {
+    agent any
+    
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    // Changez le chemin du Dockerfile si nécessaire
+                    sh 'docker build -t mon-app ./docker'
+                }
+            }
+        }
+        
+        stage('Run') {
+            steps {
+                script {
+                    sh 'docker run -d -p 8080:8080 mon-app'
+                }
+            }
+        }
+    }
+}
