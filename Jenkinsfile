@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // Variables d'environnement si nécessaire
-    }
-
     stages {
         stage('Checkout code') {
             steps {
@@ -15,9 +11,7 @@ pipeline {
 
         stage('Run Ansible Playbook') {
             steps {
-                sh '''
-                    ansible-playbook ansible/deploy.yml
-                '''
+                sh 'ansible-playbook ansible/deploy.yml'
             }
         }
     }
