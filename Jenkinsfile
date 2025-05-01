@@ -1,50 +1,24 @@
 pipeline {
     agent any
 
-    options {
-        // Nettoyage du workspace avant chaque exécution
-        wipeWorkspace()
-    }
-
     environment {
-        // Ajout explicite du chemin vers sudo
-        PATH = "/usr/bin:$PATH"
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
     }
 
     stages {
-        stage('Declarative: Checkout SCM') {
+        stage('Checkout') {
             steps {
-                checkout scm
-            }
-        }
-        
-        stage('📥 Clonage du dépôt') {
-            steps {
-                script {
-                    // Cloner le dépôt Git
-                    sh 'git clone git@github.com:HOUDA1807/gestion_absences.git'
-                }
+                git url: 'git@github.com:ton_utilisateur/ton_projet.git', credentialsId: 'ansible_ssh_key'
             }
         }
 
-        stage('📦 Exécution du playbook Ansible') {
+        stage('Run Ansible Playbook') {
             steps {
-                dir('ansible') {
-                    script {
-                        // Exécution du playbook Ansible avec le chemin modifié pour sudo
-                        sh 'ansible-playbook playbooks/playbook.yml -i inventory.ini'
-                    }
-                }
+                sh '''
+                    ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml \
+                    --private-key ~/.ssh/id_ed25519
+                '''
             }
-        }
-    }
-
-    post {
-        always {
-            echo "Pipeline terminé."
-        }
-        failure {
-            echo "❌ Échec de l’exécution du playbook."
         }
     }
 }
