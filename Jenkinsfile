@@ -1,26 +1,27 @@
 pipeline {
     agent any
-
-    environment {
-        // Variables d'environnement (exemple pour Docker)
-        IMAGE_NAME = 'gestion_absences_image'  // Remplace par un nom d'image Docker plus spécifique si tu veux
-        DOCKER_REGISTRY = 'docker.io'          // Tu peux laisser cette valeur si tu utilises Docker Hub
-        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'  // Garde cette valeur si tu utilises Java 17
+    tools {
+        // Spécifie l'installation de Maven configurée dans Jenkins
+        maven 'Maven 3'
     }
-
+    environment {
+        // Variables d'environnement que tu peux configurer
+        DOCKER_IMAGE = 'gestion_absences_image'
+        DOCKER_REGISTRY = 'your-docker-registry'
+        ANSIBLE_PLAYBOOK = 'deploy.yml'
+    }
     stages {
-        stage('Checkout') {
+        stage('Declarative: Checkout SCM') {
             steps {
-                // Récupérer ton code depuis GitHub
-                git url: 'https://github.com/HOUDA1807/gestion_absences.git', branch: 'master'
-
+                // Checkout du code depuis le dépôt Git
+                checkout scm
             }
         }
 
         stage('Build Java Project') {
             steps {
-                // Compilation du projet Java
                 script {
+                    // Exécution de Maven pour compiler le projet
                     sh 'mvn clean install'
                 }
             }
@@ -29,8 +30,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Construire une image Docker
-                    sh 'docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest .'
+                    // Construction de l'image Docker
+                    sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
@@ -38,8 +39,8 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Lancer un container Docker
-                    sh 'docker run -d -p 8080:8080 ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest'
+                    // Exécution du conteneur Docker
+                    sh 'docker run -d --name gestion_absences $DOCKER_IMAGE'
                 }
             }
         }
@@ -47,8 +48,8 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 script {
-                    // Déployer avec Ansible (si configuré)
-                    sh 'ansible-playbook -i inventory/production deploy.yml'
+                    // Déploiement avec Ansible
+                    sh "ansible-playbook -i inventory $ANSIBLE_PLAYBOOK"
                 }
             }
         }
@@ -56,7 +57,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Si tu as des tests à effectuer, ajouter ici
+                    // Exécution des tests (par exemple avec Maven ou un autre outil)
                     sh 'mvn test'
                 }
             }
@@ -65,19 +66,28 @@ pipeline {
         stage('Push to Docker Registry') {
             steps {
                 script {
-                    // Push de l'image Docker sur un registre Docker Hub
-                    sh 'docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest'
+                    // Push de l'image Docker vers un registry
+                    sh "docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DOCKER_IMAGE"
+                    sh "docker push $DOCKER_REGISTRY/$DOCKER_IMAGE"
                 }
             }
         }
     }
 
     post {
+        always {
+            // Cleanup après chaque exécution du pipeline
+            echo 'Pipeline terminé'
+            // Ajoute ici des actions de nettoyage si nécessaire (par exemple suppression de conteneurs Docker)
+            sh 'docker rm -f gestion_absences'
+        }
         success {
-            echo 'Pipeline terminé avec succès!'
+            // Actions à effectuer si le pipeline réussit
+            echo 'Pipeline réussi !'
         }
         failure {
-            echo 'Une erreur est survenue durant le pipeline.'
+            // Actions à effectuer si le pipeline échoue
+            echo 'Pipeline échoué !'
         }
     }
 }
