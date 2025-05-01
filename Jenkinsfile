@@ -16,13 +16,8 @@ pipeline {
         stage('Install Ansible (optional)') {
             steps {
                 sh '''
-                if ! command -v ansible-playbook &> /dev/null; then
-                    echo "Installing Ansible..."
-                    sudo apt-get update
-                    sudo apt-get install -y ansible
-                else
-                    echo "Ansible already installed."
-                fi
+                echo '' | sudo -S apt-get update
+                echo '' | sudo -S apt-get install -y ansible
                 '''
             }
         }
