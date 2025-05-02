@@ -1,16 +1,20 @@
-# 1. Base Java 17
-FROM openjdk:17-jdk-slim
+# Utilise une image officielle Node.js
+FROM node:18-alpine
 
-# 2. Travail dans /app
+# Crée et utilise le répertoire de travail
 WORKDIR /app
 
-# 3. Copie et compilation (Maven dans le container via Jenkins)
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
+# Copie les fichiers package.json et package-lock.json
+COPY app/package*.json ./
 
-# 4. Expose le port de l’appli
+# Installe les dépendances
+RUN npm install --production
+
+# Copie le reste de l'application
+COPY app/ .
+
+# Expose le port 8080
 EXPOSE 8080
 
-# 5. Commande de démarrage
-ENTRYPOINT ["java", "-jar", "target/gestion_absences-0.0.1-SNAPSHOT.jar"]
+# Commande de démarrage de l'application
+CMD ["npm", "start"]
