@@ -23,8 +23,10 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                // Construire à partir du répertoire racine où se trouve Dockerfile
-                sh "docker build -t ${IMAGE_NAME}:latest -f Dockerfile ."
+                // Construire à partir du dossier app contenant pom.xml et src
+                sh "docker build -t ${IMAGE_NAME}:latest -f app/Dockerfile app"
+            }
+        }:latest -f Dockerfile ."
             }
         }
         stage('Run with Docker Compose') {
