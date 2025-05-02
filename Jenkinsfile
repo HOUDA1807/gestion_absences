@@ -1,16 +1,27 @@
-pipeline {
+pipeline { 
   agent any
 
   environment {
-    // Désactive BuildKit pour éviter les DNS internes défaillants
+    // Désactive BuildKit pour éviter certains problèmes liés aux DNS dans Jenkins
     DOCKER_BUILDKIT = '0'
-    // Force Docker à utiliser le réseau de l'hôte
+    // Force Docker à utiliser le réseau de l'hôte (utile pour certains contextes locaux)
     DOCKER_NETWORK = 'host'
+    // Ajoute le chemin de Docker si besoin
+    PATH = "/usr/bin:${env.PATH}"
   }
 
   stages {
 
-    stage('Checkout SCM') {
+    stage('Vérification Docker') {
+      steps {
+        script {
+          sh 'docker --version'
+          sh 'docker compose version'
+        }
+      }
+    }
+
+    stage('Checkout du dépôt Git') {
       steps {
         checkout([
           $class: 'GitSCM',
@@ -22,7 +33,7 @@ pipeline {
       }
     }
 
-    stage('Install Node Dependencies') {
+    stage('Installation des dépendances Node.js') {
       steps {
         dir('app') {
           sh 'npm install --production'
@@ -30,10 +41,10 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Construction de l\'image Docker') {
       steps {
         sh '''
-          echo "→ Building Docker image"
+          echo "→ Construction de l'image Docker"
           DOCKER_BUILDKIT=${DOCKER_BUILDKIT} \
             docker build --network ${DOCKER_NETWORK} \
               -t gestion_absences_image:latest \
@@ -42,25 +53,24 @@ pipeline {
       }
     }
 
-    stage('Docker Compose Up') {
+    stage('Lancement avec Docker Compose') {
       steps {
         sh '''
-          echo "→ Starting containers with Docker Compose"
-          docker compose up -d
+          echo "→ Lancement des conteneurs avec Docker Compose"
+          docker compose up -d --build
         '''
       }
     }
 
-    stage('Deploy with Ansible') {
+    stage('Déploiement avec Ansible') {
       steps {
         sh '''
-          echo "→ Running Ansible playbook"
+          echo "→ Exécution du playbook Ansible"
           ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml
         '''
       }
     }
-
-  } // end stages
+  }
 
   post {
     success {
@@ -68,8 +78,8 @@ pipeline {
     }
     failure {
       echo '❌ Pipeline échouée.'
-      sh 'docker compose logs'
-      sh 'docker compose down --remove-orphans'
+      sh 'docker compose logs || true'
+      sh 'docker compose down --remove-orphans || true'
     }
   }
 }
