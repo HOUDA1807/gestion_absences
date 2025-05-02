@@ -17,6 +17,7 @@ pipeline {
       steps {
         script {
           docker.image('node:18').inside(
+            '--user root ' +
             '--volume /var/run/docker.sock:/var/run/docker.sock ' +
             '--volume /usr/bin/docker:/usr/bin/docker '
           ) {
@@ -32,6 +33,7 @@ pipeline {
       steps {
         script {
           docker.image('docker:24.0.5-cli').inside(
+            '--user root ' +
             '--volume /var/run/docker.sock:/var/run/docker.sock ' +
             '--volume /usr/bin/docker:/usr/bin/docker '
           ) {
@@ -45,6 +47,7 @@ pipeline {
       steps {
         script {
           docker.image('docker/compose:2.17.3').inside(
+            '--user root ' +
             '--volume /var/run/docker.sock:/var/run/docker.sock ' +
             '--volume /usr/bin/docker:/usr/bin/docker '
           ) {
@@ -57,7 +60,9 @@ pipeline {
     stage('Deploy with Ansible') {
       steps {
         script {
-          docker.image('willhallonline/ansible:alpine3').inside {
+          docker.image('willhallonline/ansible:alpine3').inside(
+            '--user root'
+          ) {
             sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
           }
         }
@@ -73,6 +78,7 @@ pipeline {
       echo '❌ Pipeline échouée. Logs docker-compose :'
       script {
         docker.image('docker/compose:2.17.3').inside(
+          '--user root ' +
           '--volume /var/run/docker.sock:/var/run/docker.sock ' +
           '--volume /usr/bin/docker:/usr/bin/docker '
         ) {
