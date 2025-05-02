@@ -1,24 +1,23 @@
-pipeline {
-    agent any
-
-    environment {
-        // Pour trouver docker & docker-compose
-        PATH       = "/usr/bin:${env.PATH}"
-        IMAGE_NAME = 'gestion_absences_image'
-        // <- Indique ici l’URI TCP du démon Docker
-        DOCKER_HOST = 'tcp://host.docker.internal:2375'
-        // Si host.docker.internal ne fonctionne pas, remplace par l’IP WSL
-        // DOCKER_HOST = 'tcp://172.21.68.21:2375'
-    }
-
-    stages {
-        stage('Test Docker') {
-            steps { sh 'docker --version' }
-        }
-
-        stage('Build Docker Image') {
-            steps { sh "docker build -t ${IMAGE_NAME}:latest ." }
-        }
+ pipeline {
+     agent any
+     environment {
+         PATH       = "/usr/bin:${env.PATH}"
+         IMAGE_NAME = 'gestion_absences_image'
+         DOCKER_HOST = 'tcp://host.docker.internal:2375'
+         DOCKER_HOST = 'tcp://172.21.68.21:2375'
+     }
+     stages {
+         stage('Test Docker') {
+             steps { sh 'docker --version' }
+         }
+         stage('Ping Docker Host') {
+             steps { sh 'ping -c 3 172.21.68.21' }
+         }
+         stage('Build Docker Image') {
+             steps {
+                 sh "docker build -t ${IMAGE_NAME}:latest ."
+             }
+         }
 
         stage('Run with Docker Compose') {
             steps {
