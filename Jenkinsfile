@@ -1,54 +1,53 @@
 pipeline {
     agent any
 
-    // 1) On surcharge le PATH pour que /usr/bin/docker soit trouvé dans le container Jenkins
     environment {
+        // On garde ton PATH pour docker
         PATH        = "/usr/bin:${env.PATH}"
-        // 2) On pointe Docker vers le daemon WSL exposé sur le port 2375
+        // On pointe vers le daemon Docker WSL exposé
         DOCKER_HOST = "tcp://172.21.68.21:2375"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // récupère le code, dont Dockerfile et docker-compose.yml à la racine
                 checkout scm
             }
         }
 
-        stage('Test Docker') {
+        stage('Test Docker & Compose') {
             steps {
                 sh '''
-                  echo "=== docker version ==="
+                  echo "→ docker --version"
                   docker --version
-                  echo "=== docker info ==="
+
+                  echo "→ docker compose version"
+                  docker compose version
+
+                  echo "→ docker info"
                   docker info
                 '''
             }
         }
 
-        stage('Test Docker Compose') {
+        stage('Build Image (app/)') {
             steps {
-                sh 'docker compose version'
+                dir('app') {
+                  sh '''
+                    echo "→ build app image"
+                    docker build \
+                      -t gestion_absences_image:latest \
+                      -f Dockerfile \
+                      .
+                  '''
+                }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Compose Up') {
             steps {
                 sh '''
-                  echo "=== build image ==="
-                  docker build \
-                    -t gestion_absences_image:latest \
-                    -f Dockerfile \
-                    .
-                '''
-            }
-        }
-
-        stage('Up with Docker Compose') {
-            steps {
-                sh '''
-                  echo "=== docker compose up -d ==="
+                  echo "→ docker compose up -d"
                   docker compose up -d
                 '''
             }
@@ -57,10 +56,10 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 sh '''
-                  echo "=== ansible syntax-check ==="
+                  echo "→ ansible syntax-check"
                   ansible-playbook --syntax-check -i ansible/inventory.ini ansible/playbooks/deploy.yml
 
-                  echo "=== run ansible deploy ==="
+                  echo "→ run ansible"
                   ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml
                 '''
             }
@@ -69,20 +68,19 @@ pipeline {
 
     post {
         always {
-            // on remonte les logs et on nettoie le groupe de containers de l’app
             sh '''
-              echo "=== logs docker-compose ==="
+              echo "→ logs docker-compose"
               docker compose logs || true
 
-              echo "=== docker compose down ==="
+              echo "→ docker compose down"
               docker compose down --remove-orphans || true
             '''
         }
         success {
-            echo '✅ Pipeline terminée avec succès'
+            echo '✅ Build et déploiement réussis'
         }
         failure {
-            echo '❌ Pipeline échouée ! Voir les étapes ci-dessous.'  
+            echo '❌ Quelque chose a échoué, regarde les logs ci-dessus'
         }
     }
 }
