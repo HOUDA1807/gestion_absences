@@ -12,34 +12,28 @@ pipeline {
       }
     }
 
-    stage('Build & Push Image') {
+    stage('Build Docker Image') {
       steps {
+        echo "→ Build de l'image Docker"
         sh '''
-          echo "→ Build de l'image Docker (inclut npm install)"
-          docker build \
-            --network host \
-            -t gestion_absences_image:latest \
-            -f Dockerfile .
+          newgrp docker -c "docker build --network host -t gestion_absences_image:latest -f Dockerfile ."
         '''
-        // Optionnel : push vers un registry
-        // sh 'docker tag gestion_absences_image:latest monregistry/gestion_absences:latest'
-        // sh 'docker push monregistry/gestion_absences:latest'
       }
     }
 
-    stage('Up avec Docker-Compose') {
+    stage('Docker Compose Up') {
       steps {
+        echo "→ Lancement des services via docker-compose"
         sh '''
-          echo "→ Lancement des services via docker-compose"
-          docker-compose up -d --build
+          newgrp docker -c "docker-compose up -d --build"
         '''
       }
     }
 
     stage('Deploy with Ansible') {
       steps {
+        echo "→ Déploiement via Ansible (local)"
         sh '''
-          echo "→ Déploiement via Ansible (local)"
           ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local
         '''
       }
@@ -51,9 +45,9 @@ pipeline {
       echo '✅ Pipeline réussie !'
     }
     failure {
-      echo '❌ Pipeline échouée, logs docker-compose :'
-      sh 'docker-compose logs --tail=50 || true'
-      sh 'docker-compose down --remove-orphans || true'
+      echo '❌ Pipeline échouée – logs Docker-Compose :'
+      sh 'newgrp docker -c "docker-compose logs --tail=50" || true'
+      sh 'newgrp docker -c "docker-compose down --remove-orphans" || true'
     }
   }
 }
