@@ -1,12 +1,3 @@
-**Nouveau Jenkinsfile & Dockerfile pour Agent Jenkins**
-
-Voici les deux fichiers à ajouter dans ton dépôt pour disposer d'un agent Jenkins capable d'exécuter **Node**, **Docker**, **docker‑compose** et **Ansible** sans SSH :
-
----
-
-### 1. `Jenkinsfile`
-
-```groovy
 pipeline {
   agent {
     dockerfile {
@@ -79,41 +70,3 @@ pipeline {
     }
   }
 }
-```
-
----
-
-### 2. `jenkins-agent.Dockerfile`
-
-```dockerfile
-# Image de base avec Docker CLI
-FROM docker:24.0.5-cli
-
-# Installer python3, pip, Node.js, npm, Ansible et docker-compose
-RUN apk add --no-cache \
-      python3 py3-pip nodejs npm openssh-client git \
-    && pip3 install --no-cache-dir ansible docker-compose \
-    && npm install -g npm@latest
-
-# Répertoire de travail (facultatif)
-WORKDIR /workspace
-```
-
----
-
-#### 📝 Inventaire Ansible pour déploiement local
-
-Dans `ansible/inventory.ini`, cible localhost :
-
-```ini
-[local]
-127.0.0.1 ansible_connection=local
-```
-
-Avec ces deux fichiers et l'inventaire, ton pipeline Jenkins :
-
-* monte l'image agent personnalisée
-* contrôle le démon Docker de l'hôte via le socket
-* dispose de `npm`, `docker-compose`, `ansible` prêts à l'emploi
-
-**Teste et dis-moi** si tu as besoin d'ajustements (chemins, versions, etc.).
