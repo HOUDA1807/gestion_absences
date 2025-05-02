@@ -23,10 +23,8 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                // Construire à partir du dossier app contenant pom.xml et src
+                // Construire l’image en précisant Dockerfile et contexte
                 sh "docker build -t ${IMAGE_NAME}:latest -f app/Dockerfile app"
-            }
-        }:latest -f Dockerfile ."
             }
         }
         stage('Run with Docker Compose') {
@@ -36,7 +34,9 @@ pipeline {
             }
         }
         stage('Deploy with Ansible') {
-            steps { sh 'ansible-playbook ansible/playbooks/deploy.yml' }
+            steps {
+                sh 'ansible-playbook -i ansible/hosts ansible/playbooks/deploy.yml'
+            }
         }
     }
     post {
