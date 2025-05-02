@@ -36,7 +36,7 @@ pipeline {
 
     post {
         always {
-            echo '❌ Pipeline échouée – logs Docker-Compose :'
+            echo 'Pipeline – logs Docker-Compose :'
             sh 'newgrp docker -c "docker-compose logs --tail=50"'
             sh 'newgrp docker -c "docker-compose down --remove-orphans"'
         }
