@@ -2,71 +2,46 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_ARGS = '-u root ' +
-                  '--privileged ' +
-                  '-v /var/run/docker.sock:/var/run/docker.sock ' +
-                  '-v /usr/bin/docker:/usr/bin/docker'
+    PATH = "/usr/bin:${env.PATH}"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        // Ton repo est public, pas besoin de credentials
         git url: 'https://github.com/HOUDA1807/gestion_absences.git', branch: 'master'
       }
     }
 
-    stage('Sanity Checks') {
+    stage('Build & Push Image') {
       steps {
-        echo '→ Vérification des outils dans les containers éphémères'
-        script {
-          docker.image('docker:24.1.0-cli').inside(DOCKER_ARGS) {
-            sh 'docker --version'
-            sh 'docker-compose --version || echo "Legacy docker-compose absent"'
-          }
-        }
+        sh '''
+          echo "→ Build de l'image Docker (inclut npm install)"
+          docker build \
+            --network host \
+            -t gestion_absences_image:latest \
+            -f Dockerfile .
+        '''
+        // Optionnel : push vers un registry
+        // sh 'docker tag gestion_absences_image:latest monregistry/gestion_absences:latest'
+        // sh 'docker push monregistry/gestion_absences:latest'
       }
     }
 
-    stage('Install Node Dependencies') {
+    stage('Up avec Docker-Compose') {
       steps {
-        script {
-          docker.image('node:14').inside(DOCKER_ARGS) {
-            dir('app') {
-              sh 'npm ci --production'
-            }
-          }
-        }
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        script {
-          docker.image('docker:24.1.0-cli').inside(DOCKER_ARGS) {
-            sh 'docker build -t gestion_absences_image:latest -f Dockerfile .'
-          }
-        }
-      }
-    }
-
-    stage('Docker Compose Up') {
-      steps {
-        script {
-          docker.image('docker/compose:2.19.1').inside(DOCKER_ARGS) {
-            sh 'docker-compose up -d --build'
-          }
-        }
+        sh '''
+          echo "→ Lancement des services via docker-compose"
+          docker-compose up -d --build
+        '''
       }
     }
 
     stage('Deploy with Ansible') {
       steps {
-        script {
-          docker.image('willhallonline/ansible:alpine3').inside(DOCKER_ARGS) {
-            sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local'
-          }
-        }
+        sh '''
+          echo "→ Déploiement via Ansible (local)"
+          ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local
+        '''
       }
     }
   }
@@ -76,13 +51,9 @@ pipeline {
       echo '✅ Pipeline réussie !'
     }
     failure {
-      echo '❌ Pipeline échouée, récupération des logs Docker-Compose'
-      script {
-        docker.image('docker/compose:2.19.1').inside(DOCKER_ARGS) {
-          sh 'docker-compose logs --tail=50 || true'
-          sh 'docker-compose down --remove-orphans || true'
-        }
-      }
+      echo '❌ Pipeline échouée, logs docker-compose :'
+      sh 'docker-compose logs --tail=50 || true'
+      sh 'docker-compose down --remove-orphans || true'
     }
   }
 }
