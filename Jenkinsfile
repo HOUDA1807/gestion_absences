@@ -16,7 +16,10 @@ pipeline {
     stage('Install Node Dependencies') {
       steps {
         script {
-          docker.image('node:18').inside {
+          docker.image('node:18').inside(
+            '--volume /var/run/docker.sock:/var/run/docker.sock ' +
+            '--volume /usr/bin/docker:/usr/bin/docker '
+          ) {
             dir('app') {
               sh 'npm ci --production'
             }
@@ -28,7 +31,10 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          docker.image('docker:24.0.5-cli').inside("-v /var/run/docker.sock:/var/run/docker.sock") {
+          docker.image('docker:24.0.5-cli').inside(
+            '--volume /var/run/docker.sock:/var/run/docker.sock ' +
+            '--volume /usr/bin/docker:/usr/bin/docker '
+          ) {
             sh 'docker build -t gestion_absences_image:latest -f Dockerfile .'
           }
         }
@@ -38,7 +44,10 @@ pipeline {
     stage('Docker Compose Up') {
       steps {
         script {
-          docker.image('docker/compose:2.17.3').inside("-v /var/run/docker.sock:/var/run/docker.sock") {
+          docker.image('docker/compose:2.17.3').inside(
+            '--volume /var/run/docker.sock:/var/run/docker.sock ' +
+            '--volume /usr/bin/docker:/usr/bin/docker '
+          ) {
             sh 'docker-compose up -d --build'
           }
         }
@@ -61,9 +70,12 @@ pipeline {
       echo '✅ Pipeline réussie !'
     }
     failure {
-      echo '❌ Pipeline échouée. Logs docker-compose :'
+      echo '❌ Pipeline échouée. Logs docker-compose :'
       script {
-        docker.image('docker/compose:2.17.3').inside("-v /var/run/docker.sock:/var/run/docker.sock") {
+        docker.image('docker/compose:2.17.3').inside(
+          '--volume /var/run/docker.sock:/var/run/docker.sock ' +
+          '--volume /usr/bin/docker:/usr/bin/docker '
+        ) {
           sh 'docker-compose logs --tail=50 || true'
           sh 'docker-compose down --remove-orphans || true'
         }
