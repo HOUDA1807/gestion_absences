@@ -2,7 +2,11 @@ pipeline {
   agent any
 
   environment {
-    PATH = "/usr/bin:${env.PATH}"
+    DOCKER_BUILDKIT = '0'
+    // On remonte le socket et le binaire Docker
+    DOCKER_ARGS = '-u root ' +
+                  '-v /var/run/docker.sock:/var/run/docker.sock ' +
+                  '-v /usr/bin/docker:/usr/bin/docker'
   }
 
   stages {
@@ -12,42 +16,49 @@ pipeline {
       }
     }
 
-    stage('Sanity Checks') {
-      steps {
-        sh '''
-          echo "→ Versions dans Jenkins :"
-          docker --version
-          docker-compose --version
-          node --version || echo "node absent"
-          npm --version  || echo "npm absent"
-          ansible --version || echo "ansible absent"
-        '''
-      }
-    }
-
     stage('Install Node Dependencies') {
       steps {
-        dir('app') {
-          sh 'npm ci --production'
+        // On utilise l'image officielle node:14 pour npm
+        script {
+          docker.image('node:14').inside(DOCKER_ARGS) {
+            dir('app') {
+              sh 'npm ci --production'
+            }
+          }
         }
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh 'docker build -t gestion_absences_image:latest -f Dockerfile .'
+        // Docker CLI dans un conteneur docker:24-cli
+        script {
+          docker.image('docker:24.0.5-cli').inside(DOCKER_ARGS) {
+            sh 'docker build -t gestion_absences_image:latest -f Dockerfile .'
+          }
+        }
       }
     }
 
     stage('Docker Compose Up') {
       steps {
-        sh 'docker-compose up -d --build'
+        // Compose v2 dans un conteneur dédié
+        script {
+          docker.image('docker/compose:2.19.1').inside(DOCKER_ARGS) {
+            sh 'docker-compose up -d --build'
+          }
+        }
       }
     }
 
     stage('Deploy with Ansible') {
       steps {
-        sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local'
+        // Image Alpine + Ansible
+        script {
+          docker.image('willhallonline/ansible:alpine3').inside(DOCKER_ARGS) {
+            sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local'
+          }
+        }
       }
     }
   }
@@ -57,9 +68,13 @@ pipeline {
       echo '✅ Pipeline réussie !'
     }
     failure {
-      echo '❌ Pipeline échouée, voici les logs docker-compose :'
-      sh 'docker-compose logs --tail=50 || true'
-      sh 'docker-compose down --remove-orphans || true'
+      echo '❌ Pipeline échouée, récupération des logs compose…'
+      script {
+        docker.image('docker/compose:2.19.1').inside(DOCKER_ARGS) {
+          sh 'docker-compose logs --tail=50 || true'
+          sh 'docker-compose down --remove-orphans || true'
+        }
+      }
     }
   }
 }
