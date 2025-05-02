@@ -23,10 +23,8 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                // On construit à partir du répertoire 'app' où se trouvent le code et Dockerfile
-                dir('app') {
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
-                }
+                // Construire à partir du répertoire racine où se trouve Dockerfile
+                sh "docker build -t ${IMAGE_NAME}:latest -f Dockerfile ."
             }
         }
         stage('Run with Docker Compose') {
