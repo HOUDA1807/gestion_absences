@@ -1,9 +1,9 @@
 pipeline {
     agent any
     environment {
-        PATH        = "/usr/bin:${env.PATH}"                
+        PATH        = "/usr/bin:${env.PATH}"                // pour docker, docker-compose, ansible
         IMAGE_NAME  = 'gestion_absences_image'
-        DOCKER_HOST = 'tcp://172.21.68.21:2375'               
+        DOCKER_HOST = 'tcp://172.21.68.21:2375'               // démon Docker WSL
     }
     stages {
         stage('Test Docker') {
@@ -16,9 +16,15 @@ pipeline {
                 sh 'docker compose version'
             }
         }
-        stage('Ping Docker Host') {
+        // Vérifie la connexion au démon Docker via info plutôt que ping
+        stage('Check Docker Daemon') {
             steps {
-                sh 'ping -c 3 172.21.68.21'
+                script {
+                    def status = sh(script: 'docker info', returnStatus: true)
+                    if (status != 0) {
+                        error "Impossible de joindre le démon Docker : code ${status}"
+                    }
+                }
             }
         }
         stage('Build Docker Image') {
