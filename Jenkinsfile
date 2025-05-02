@@ -2,88 +2,74 @@ pipeline {
   agent any
 
   environment {
-    PATH         = "/usr/bin:${env.PATH}"
-    DOCKER_HOST  = "tcp://172.21.68.21:2375"
+    // Désactive BuildKit pour éviter les DNS internes défaillants
+    DOCKER_BUILDKIT = '0'
+    // Force Docker à utiliser le réseau de l'hôte
+    DOCKER_NETWORK = 'host'
   }
 
   stages {
-    stage('Checkout') {
+
+    stage('Checkout SCM') {
       steps {
-        // Récupère exactement le même repo et Jenkinsfile que tu as configuré
-        checkout scm
+        checkout([
+          $class: 'GitSCM',
+          userRemoteConfigs: [[
+            url: 'https://github.com/HOUDA1807/gestion_absences.git',
+            credentialsId: 'pipe'
+          ]]
+        ])
       }
     }
 
-    stage('Verify Docker') {
+    stage('Install Node Dependencies') {
       steps {
-        sh '''
-          echo "→ docker --version" 
-          docker --version
-          echo "→ docker info"
-          docker info
-        '''
+        dir('app') {
+          sh 'npm install --production'
+        }
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        dir("${WORKSPACE}") {
-          sh '''
-            echo "→ build image from root Dockerfile"
-            docker build \
+        sh '''
+          echo "→ Building Docker image"
+          DOCKER_BUILDKIT=${DOCKER_BUILDKIT} \
+            docker build --network ${DOCKER_NETWORK} \
               -t gestion_absences_image:latest \
-              -f Dockerfile \
-              .
-          '''
-        }
+              -f Dockerfile .
+        '''
       }
     }
 
-    stage('Compose Up') {
+    stage('Docker Compose Up') {
       steps {
-        dir("${WORKSPACE}") {
-          sh '''
-            echo "→ docker compose up"
-            docker compose \
-              -f docker-compose.yml \
-              up -d
-          '''
-        }
+        sh '''
+          echo "→ Starting containers with Docker Compose"
+          docker compose up -d
+        '''
       }
     }
 
     stage('Deploy with Ansible') {
       steps {
-        dir("${WORKSPACE}") {
-          sh '''
-            echo "→ ansible-playbook deploy"
-            ansible-playbook \
-              -i ansible/inventory.ini \
-              ansible/playbooks/deploy.yml
-          '''
-        }
-      }
-    }
-  }
-
-  post {
-    always {
-      // On shutdown juste l'app de la CI, pas ton conteneur Jenkins !
-      dir("${WORKSPACE}") {
         sh '''
-          echo "→ docker compose down"
-          docker compose \
-            -f docker-compose.yml \
-            down --remove-orphans || true
+          echo "→ Running Ansible playbook"
+          ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml
         '''
       }
     }
+
+  } // end stages
+
+  post {
     success {
-      echo "✅ Pipeline terminée avec succès"
+      echo '✅ Pipeline réussie !'
     }
     failure {
-      echo "❌ Pipeline échouée, regarde les logs ci-dessus"
+      echo '❌ Pipeline échouée.'
+      sh 'docker compose logs'
+      sh 'docker compose down --remove-orphans'
     }
   }
 }
-
