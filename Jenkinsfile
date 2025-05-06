@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent any
 
     environment {
@@ -30,6 +30,21 @@ pipeline {
             steps {
                 echo '→ Déploiement via Ansible (local)'
                 sh 'newgrp docker -c "ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local"'
+            }
+        }
+
+        // Étapes ajoutées pour Selenium
+        stage('Install dependencies') {
+            steps {
+                echo '→ Installation des dépendances Selenium'
+                sh 'newgrp docker -c "pip3 install selenium"'
+            }
+        }
+
+        stage('Run Selenium Test') {
+            steps {
+                echo '→ Exécution du test Selenium'
+                sh 'newgrp docker -c "python3 tests/test_google.py"'
             }
         }
     }
