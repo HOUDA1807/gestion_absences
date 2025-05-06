@@ -1,4 +1,4 @@
-pipeline { 
+pipeline {
     agent any
 
     environment {
@@ -6,12 +6,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/HOUDA1807/gestion_absences.git'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 echo '→ Build de l\'image Docker'
@@ -33,7 +27,6 @@ pipeline {
             }
         }
 
-        // Étapes ajoutées pour Selenium
         stage('Install dependencies') {
             steps {
                 echo '→ Installation des dépendances Selenium'
