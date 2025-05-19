@@ -3,13 +3,19 @@ pipeline {
 
     environment {
         DOCKER_BUILDKIT = 1
+        DOCKER_IMAGE = "gestion_absences_image:latest"
+    }
+
+    options {
+        // Timeout global : abandonne la pipeline si trop longue (par exemple 30 minutes)
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
                 echo '→ Build de l\'image Docker'
-                sh 'newgrp docker -c "docker build --network host -t gestion_absences_image:latest -f Dockerfile ."'
+                sh 'newgrp docker -c "docker build --network host -t $DOCKER_IMAGE -f Dockerfile ."'
             }
         }
 
@@ -29,8 +35,9 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                echo '→ Installation des dépendances Selenium'
-                sh 'newgrp docker -c "pip3 install selenium"'
+                echo '→ Mise à jour de pip et installation des dépendances Selenium'
+                sh 'newgrp docker -c "pip3 install --upgrade pip"'
+                sh 'newgrp docker -c "pip3 install --upgrade selenium"'
             }
         }
 
