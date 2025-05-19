@@ -44,7 +44,8 @@ pipeline {
         stage('Run Selenium Test') {
             steps {
                 echo '→ Exécution du test Selenium'
-                sh 'newgrp docker -c "python3 tests/test_google.py"'
+                // Modification ici pour lancer le test dans le container Docker
+                sh 'newgrp docker -c "docker run --rm $DOCKER_IMAGE"'
             }
         }
     }
