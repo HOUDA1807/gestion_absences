@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "username": "Yassmine",
+    "email": "yassmin.elkobbi@gmail.com",
+    "password": "$2b$10$xCUJDsUwIzSlJFsCg7Pcnu1AChh6xEFXHNDJzN5QkVV4QNbZ/X1PO",
+    "role": "admin"
+  },
+  {
+    "id": 2,
+    "username": "hiba",
+    "email": "hibaelkobbi@gmail.com",
+    "password": "$2b$10$0Evp3x7rVtUHY71zbymGRucYmxzl5F2O/z8wlfOOBHMmiNkil6JRq",
+    "role": "student"
+  },
+  {
+    "id": 3,
+    "username": "Houda",
+    "email": "Houda@gmail.com",
+    "password": "$2b$10$6DoOVTkuHrTs8kiB8ZVw1ef8Hpntv14F7t7DsFq.CmKKQDfVMMmle",
+    "role": "teacher"
+  },
+  {
+    "id": 4,
+    "username": "Aziza",
+    "email": "Aziza@gmail.com ",
+    "password": "$2b$10$KV2JGYaonppbq.nPhdm09.htJmbloDlRfouomfB10/xfkjfbrl3bi",
+    "role": "student"
+  },
+  {
+    "id": 5,
+    "username": "Israe",
+    "email": "Israe@gmail.com",
+    "password": "$2b$10$Ak4Yg5Ax0NU13vbAYB4nyOwyBwp76lAjFht1NLomJsjpXJNPikBe.",
+    "role": "student"
+  },
+  {
+    "id": 6,
+    "username": "El Gharbaoui Houda",
+    "email": "elgharbaoui.h123@ucd.ac.ma",
+    "password": "$2b$10$bgiGwDFW3tq.KupZ6FVAPOmqKb/f1JCpBtJkRooUgVuwkVfc/xnaS",
+    "role": "Etudiant"
+  },
+  {
+    "id": 7,
+    "username": "Houda El Gharbaoui",
+    "email": "elgharbaoui.h@ucd.ac.ma",
+    "password": "$2b$10$dkSAUEV6XdH.Y27Dmg9Sxu0ZK0BSTrA.ff3c0Td6DZjDNs6K1eZWK",
+    "role": "student"
+  },
+  {
+    "id": 8,
+    "username": "Assad - Nourredin",
+    "email": "assad.nourredin@gmail.com",
+    "password": "$2b$10$CN8kgnWQCTe4NWEYfSNIneD4Kv2AMlZa1yGQReViVyS0XzwaUM3gK",
+    "role": "teacher"
+  }
+]
