@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent any
 
     environment {
@@ -35,15 +35,15 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                echo '→ Mise à jour de pip et installation des dépendances Selenium'
+                echo '→ Mise à jour de pip et installation des dépendances Detox'
                 sh 'newgrp docker -c "pip3 install --upgrade pip"'
-                sh 'newgrp docker -c "pip3 install --upgrade selenium"'
+                sh 'newgrp docker -c "pip3 install --upgrade detox"'
             }
         }
 
-        stage('Run Selenium Test') {
+        stage('Run Detox Test') {
             steps {
-                echo '→ Exécution du test Selenium'
+                echo '→ Exécution du test Detox'
                 // Modification ici pour lancer le test dans le container Docker
                 sh 'newgrp docker -c "docker run --rm $DOCKER_IMAGE"'
             }
